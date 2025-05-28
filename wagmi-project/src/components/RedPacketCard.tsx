@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import BigNumber from 'bignumber.js'
 import { BagInfo, BagStatus } from '../contracts/happyBag'
-import { formatAmount, useClaimBag, useBagStatus } from '../hooks/useHappyBag'
+import { formatAmount, useClaimBag, useBagStatus, formatBagId } from '../hooks/useHappyBag'
 import { useAccount } from 'wagmi'
 import {
   Card,
@@ -249,7 +249,7 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
         >
           <Descriptions size="small" column={2}>
             <Descriptions.Item label="红包ID">
-              #{bagId.toString()}
+              <Text code>#{formatBagId(bagId)}</Text>
             </Descriptions.Item>
             <Descriptions.Item label="总金额">
               {formatAmount(bagInfo.totalAmount)} ETH

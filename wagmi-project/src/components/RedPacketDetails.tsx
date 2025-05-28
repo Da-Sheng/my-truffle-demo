@@ -1,7 +1,7 @@
 // 红包详情组件 - 显示领取历史和详细信息
 import React, { useState, useEffect } from 'react'
 import BigNumber from 'bignumber.js'
-import { useCurrentBagId, useBagInfo, useUserClaimedAmount, formatAmount } from '../hooks/useHappyBag'
+import { useCurrentBagId, useBagInfo, useUserClaimedAmount, useBagClaimRecords, formatAmount, formatBagId } from '../hooks/useHappyBag'
 import { useAccount } from 'wagmi'
 import { BagInfo } from '../contracts/happyBag'
 import {
@@ -47,37 +47,13 @@ interface ClaimRecord {
 export const RedPacketDetails: React.FC = () => {
   const { address } = useAccount()
   const { data: currentBagId } = useCurrentBagId()
-  const { data: bagInfo } = useBagInfo(
-    currentBagId && typeof currentBagId === 'bigint' ? new BigNumber(currentBagId.toString()) : undefined
-  )
-  const { data: userClaimedAmount } = useUserClaimedAmount(
-    currentBagId && typeof currentBagId === 'bigint' ? new BigNumber(currentBagId.toString()) : undefined,
-    address
-  )
+  const bagIdBN = currentBagId && typeof currentBagId === 'bigint' ? new BigNumber(currentBagId.toString()) : undefined
+  
+  const { data: bagInfo } = useBagInfo(bagIdBN)
+  const { data: userClaimedAmount } = useUserClaimedAmount(bagIdBN, address)
+  const { data: claimRecords, isLoading: isLoadingRecords } = useBagClaimRecords(bagIdBN)
 
   const [showAllRecords, setShowAllRecords] = useState(false)
-
-  // 模拟领取记录 - 在实际应用中应该从区块链事件或后端获取
-  const mockClaimRecords: ClaimRecord[] = [
-    {
-      key: '1',
-      user: '0x1234567890123456789012345678901234567890',
-      amount: new BigNumber(150000000000000000), // 0.15 ETH
-      claimedTime: Date.now() - 3600000 // 1小时前
-    },
-    {
-      key: '2',
-      user: '0x2345678901234567890123456789012345678901',
-      amount: new BigNumber(200000000000000000), // 0.2 ETH
-      claimedTime: Date.now() - 1800000 // 30分钟前
-    },
-    {
-      key: '3',
-      user: '0x3456789012345678901234567890123456789012',
-      amount: new BigNumber(100000000000000000), // 0.1 ETH
-      claimedTime: Date.now() - 900000 // 15分钟前
-    }
-  ]
 
   // 格式化地址显示
   const formatAddress = (addr: string) => {
@@ -198,6 +174,14 @@ export const RedPacketDetails: React.FC = () => {
           <Row gutter={[24, 24]}>
             <Col xs={24} sm={8}>
               <Statistic
+                title="红包ID"
+                value={formatBagId(bagIdBN)}
+                valueStyle={{ color: '#1890ff', fontSize: '16px' }}
+                prefix="#"
+              />
+            </Col>
+            <Col xs={24} sm={8}>
+              <Statistic
                 title="总金额"
                 value={formatAmount(bagData.totalAmount)}
                 suffix="ETH"
@@ -212,14 +196,6 @@ export const RedPacketDetails: React.FC = () => {
                 suffix={`/ ${totalCount}`}
                 valueStyle={{ color: '#52c41a', fontSize: '24px' }}
                 prefix={<CheckCircleOutlined />}
-              />
-            </Col>
-            <Col xs={24} sm={8}>
-              <Statistic
-                title="剩余数量"
-                value={remainingCount}
-                valueStyle={{ color: '#1890ff', fontSize: '24px' }}
-                prefix={<ClockCircleOutlined />}
               />
             </Col>
           </Row>
@@ -296,30 +272,51 @@ export const RedPacketDetails: React.FC = () => {
           </Space>
         }
         extra={
-          <Button
-            type="link"
-            icon={showAllRecords ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-            onClick={() => setShowAllRecords(!showAllRecords)}
-          >
-            {showAllRecords ? '收起' : '查看全部'}
-          </Button>
+          claimRecords && claimRecords.length > 3 && (
+            <Button
+              type="link"
+              icon={showAllRecords ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+              onClick={() => setShowAllRecords(!showAllRecords)}
+            >
+              {showAllRecords ? '收起' : '查看全部'}
+            </Button>
+          )
         }
         style={{ borderRadius: '8px' }}
       >
-        {mockClaimRecords.length > 0 ? (
+        {isLoadingRecords ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px' }}>
+              <Text type="secondary">正在加载领取记录...</Text>
+            </div>
+          </div>
+        ) : claimRecords && claimRecords.length > 0 ? (
           <Table
             columns={columns}
-            dataSource={mockClaimRecords.slice(0, showAllRecords ? undefined : 3)}
+            dataSource={claimRecords.slice(0, showAllRecords ? undefined : 3)}
             rowKey="key"
             pagination={false}
             size="middle"
             style={{ marginTop: '16px' }}
           />
         ) : (
-          <Empty
-            description="暂无领取记录"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Empty
+              description={
+                <Space direction="vertical" size="small">
+                  <Text type="secondary">暂无领取记录</Text>
+                  <Text style={{ fontSize: '12px', color: '#999' }}>
+                    当前版本暂未实现区块链事件监听
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#999' }}>
+                    如需查看完整领取记录，请在区块链浏览器中查看合约事件
+                  </Text>
+                </Space>
+              }
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          </div>
         )}
       </Card>
     </Space>

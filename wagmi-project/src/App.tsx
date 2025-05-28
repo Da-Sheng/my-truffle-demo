@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAccount, useDisconnect } from 'wagmi'
 import { ConnectKitButton } from "connectkit"
 import { CreateRedPacket } from './components/CreateRedPacket'
@@ -47,18 +47,53 @@ function App() {
   const [activeTab, setActiveTab] = useState<PageTab>(PageTab.QUEUE)
   const queryClient = useQueryClient()
 
+  // 添加CSS动画样式
+  React.useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(1.1);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
+  // 监听账户变化
+  useEffect(() => {
+    if (account.address) {
+      console.log('🔄 账户已切换:', account.address)
+      
+      // 清除所有相关查询缓存，强制重新获取数据
+      queryClient.invalidateQueries({ queryKey: ['readContract'] })
+      queryClient.invalidateQueries({ queryKey: ['balance'] })
+      queryClient.invalidateQueries({ queryKey: ['allowance'] })
+      
+      // 显示账户切换提示
+      console.log('✅ 账户信息已更新，相关数据正在重新加载...')
+    }
+  }, [account.address, queryClient])
+
   // 处理创建红包成功
   const handleCreateSuccess = () => {
     // 清除相关查询缓存，强制重新获取数据
     queryClient.invalidateQueries({ queryKey: ['readContract'] })
     
-    // 短暂延迟后切换到详情页面，让数据有时间刷新
-    setTimeout(() => {
-      setActiveTab(PageTab.DETAILS)
-    }, 1000)
-    
-    // 显示成功提示
-    console.log('红包创建成功！正在跳转到详情页面...')
+    // 显示成功提示，但不自动跳转
+    console.log('红包创建成功！')
   }
 
   // 标签页配置
@@ -116,7 +151,42 @@ function App() {
 
         {/* 账户信息和连接按钮 */}
         <Space size="large">
-          {account.status === 'connected' && (
+          {account.status === 'connected' && account.address && (
+            <Card 
+              size="small" 
+              style={{ 
+                background: 'rgba(255,255,255,0.9)',
+                borderRadius: '12px',
+                border: 'none',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <Space direction="vertical" size={0}>
+                <Space size={4}>
+                  <div style={{ 
+                    width: '8px', 
+                    height: '8px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#52c41a',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                  <Text strong style={{ fontSize: '12px' }}>
+                    <WalletOutlined /> {account.address.slice(0, 6)}...{account.address.slice(-4)}
+                  </Text>
+                </Space>
+                <Space size={4}>
+                  <Tag color="blue" style={{ fontSize: '10px', margin: 0 }}>
+                    链ID: {account.chainId}
+                  </Tag>
+                  <Tag color="green" style={{ fontSize: '10px', margin: 0 }}>
+                    已连接
+                  </Tag>
+                </Space>
+              </Space>
+            </Card>
+          )}
+          
+          {account.status === 'connecting' && (
             <Card 
               size="small" 
               style={{ 
@@ -125,13 +195,15 @@ function App() {
                 border: 'none'
               }}
             >
-              <Space direction="vertical" size={0}>
-                <Text strong style={{ fontSize: '12px' }}>
-                  <WalletOutlined /> {account.address?.slice(0, 6)}...{account.address?.slice(-4)}
-                </Text>
-                <Tag color="blue" style={{ fontSize: '10px', margin: 0 }}>
-                  链ID: {account.chainId}
-                </Tag>
+              <Space>
+                <div style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#fa8c16',
+                  animation: 'pulse 1s infinite'
+                }} />
+                <Text style={{ fontSize: '12px' }}>连接中...</Text>
               </Space>
             </Card>
           )}

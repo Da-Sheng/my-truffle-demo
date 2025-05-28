@@ -1,6 +1,6 @@
 // 红包队列组件 - 管理红包的显示队列
-import React, { useState, useEffect } from 'react'
-import { useCurrentBagId, useBagInfo } from '../hooks/useHappyBag'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useCurrentBagId, useBagInfo, formatBagId, formatAmount } from '../hooks/useHappyBag'
 import { RedPacketCard } from './RedPacketCard'
 import { BagInfo, happyBagConfig } from '../contracts/happyBag'
 import { useQueryClient } from '@tanstack/react-query'
@@ -35,7 +35,6 @@ const { Title, Text } = Typography
 interface QueueItem {
   id: BigNumber
   info: BagInfo
-  position: number
 }
 
 export const RedPacketQueue: React.FC = () => {
@@ -46,6 +45,14 @@ export const RedPacketQueue: React.FC = () => {
   // 添加网络和账户状态检查
   const account = useAccount()
   const chainId = useChainId()
+
+  // 监听账户变化，自动刷新数据
+  useEffect(() => {
+    if (account.address) {
+      console.log('🔄 RedPacketQueue: 账户已切换，刷新红包数据')
+      refreshData()
+    }
+  }, [account.address])
 
   // 从合约获取数据
   const { 
@@ -83,7 +90,10 @@ export const RedPacketQueue: React.FC = () => {
     }
   }
 
-  const safeBagInfo = getSafeBagInfo(bagInfo)
+  // 使用 useMemo 来稳定化 safeBagInfo，避免无限循环
+  const safeBagInfo = useMemo(() => {
+    return getSafeBagInfo(bagInfo)
+  }, [bagInfo])
 
   // 调试日志
   React.useEffect(() => {
@@ -127,37 +137,21 @@ export const RedPacketQueue: React.FC = () => {
     return () => clearInterval(interval)
   }, [isLoadingBagId, isLoadingBagInfo, refreshing])
 
-  // 构建队列数据
+  // 构建队列数据 - 简化逻辑，只显示当前红包
   useEffect(() => {
     const newQueue: QueueItem[] = []
     
-    // 添加当前活跃的红包
+    // 添加当前红包（如果存在）
     if (currentBagId && typeof currentBagId === 'bigint' && currentBagId > 0n && safeBagInfo) {
       const currentBagIdBN = new BigNumber(currentBagId.toString())
       if (currentBagIdBN.isGreaterThan(0)) {
         newQueue.push({
           id: currentBagIdBN,
-          info: safeBagInfo,
-          position: 1
+          info: safeBagInfo
         })
       }
     }
     
-    // 模拟队列中的其他红包（实际项目中应该从合约获取）
-    if (newQueue.length === 0) {
-      // 模拟数据，仅用于演示
-      const mockBagInfo: BagInfo = {
-        totalAmount: new BigNumber('1000000000000000000'), // 1 ETH in wei
-        totalCount: new BigNumber('5'),
-        remainingCount: new BigNumber('3'),
-        remainingAmount: new BigNumber('600000000000000000'), // 0.6 ETH in wei
-        startTime: new BigNumber(Math.floor(Date.now() / 1000) + 3600), // 1小时后
-        creator: '0x1234...5678',
-        isActive: true,
-        isEqual: false
-      }
-    }
-
     setBagQueue(newQueue)
   }, [currentBagId, safeBagInfo])
 
@@ -168,10 +162,10 @@ export const RedPacketQueue: React.FC = () => {
     }, 2000) // 2秒后刷新数据
   }
 
-  // 判断是否有活跃红包
-  const hasActiveBag = currentBagId && typeof currentBagId === 'bigint' && currentBagId > 0n && safeBagInfo?.isActive
+  // 判断是否有红包
+  const hasBag = currentBagId && typeof currentBagId === 'bigint' && currentBagId > 0n && safeBagInfo
 
-  if (!hasActiveBag) {
+  if (!hasBag) {
     return (
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <Card
@@ -250,7 +244,7 @@ export const RedPacketQueue: React.FC = () => {
             imageStyle={{ fontSize: '64px', height: '80px' }}
             description={
               <Space direction="vertical" size="small">
-                <Title level={4} type="secondary">暂无活跃红包</Title>
+                <Title level={4} type="secondary">暂无红包</Title>
                 <Text type="secondary">等待有人创建新的红包...</Text>
                 <Text style={{ fontSize: '12px', color: '#999' }}>
                   如果刚刚创建了红包，请点击刷新按钮或稍等片刻
@@ -287,13 +281,13 @@ export const RedPacketQueue: React.FC = () => {
       >
         {/* 队列说明 */}
         <Alert
-          message="队列规则"
+          message="红包规则"
           description={
             <div>
-              <p>• 红包按照创建时间顺序排列</p>
-              <p>• 只有当前红包可以领取，其他红包处于等待状态</p>
-              <p>• 当前红包被领完后，下一个红包自动激活</p>
+              <p>• 每次只能有一个活跃红包</p>
+              <p>• 红包状态由智能合约控制</p>
               <p>• 每个地址只能领取一次当前红包</p>
+              <p>• 红包被领完后会自动变为非活跃状态</p>
             </div>
           }
           type="info"
@@ -302,62 +296,24 @@ export const RedPacketQueue: React.FC = () => {
           showIcon
         />
 
-        {/* 红包队列列表 */}
+        {/* 红包列表 */}
         <div style={{ marginBottom: '24px' }}>
-          <Title level={5} style={{ marginBottom: '16px' }}>当前队列</Title>
+          <Title level={5} style={{ marginBottom: '16px' }}>当前红包</Title>
           
           {bagQueue.length > 0 ? (
             <Row gutter={[16, 16]}>
               {bagQueue.map((queuedBag) => (
                 <Col xs={24} lg={12} key={queuedBag.id.toString()}>
-                  <div style={{ position: 'relative' }}>
-                    {queuedBag.position === 0 && (
-                      <Badge.Ribbon text="正在进行" color="red">
-                        <RedPacketCard
-                          bagId={queuedBag.id}
-                          bagInfo={queuedBag.info}
-                          onClaimSuccess={handleClaimSuccess}
-                        />
-                      </Badge.Ribbon>
-                    )}
-                    {queuedBag.position > 0 && (
-                      <Badge.Ribbon text={`排队中 #${queuedBag.position + 1}`} color="gray">
-                        <Card
-                          style={{ 
-                            opacity: 0.6,
-                            borderRadius: '12px',
-                            border: '1px dashed #d9d9d9'
-                          }}
-                        >
-                          <Space direction="vertical" style={{ width: '100%' }}>
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🧧</div>
-                              <Text strong>等待中的红包</Text>
-                            </div>
-                            <Descriptions size="small" column={1}>
-                              <Descriptions.Item label="红包ID">
-                                #{queuedBag.id.toString()}
-                              </Descriptions.Item>
-                              <Descriptions.Item label="总金额">
-                                {(Number(queuedBag.info.totalAmount) / 10**18).toFixed(4)} ETH
-                              </Descriptions.Item>
-                              <Descriptions.Item label="数量">
-                                {queuedBag.info.totalCount.toString()} 个
-                              </Descriptions.Item>
-                              <Descriptions.Item label="状态">
-                                <Tag color="default">等待激活</Tag>
-                              </Descriptions.Item>
-                            </Descriptions>
-                          </Space>
-                        </Card>
-                      </Badge.Ribbon>
-                    )}
-                  </div>
+                  <RedPacketCard
+                    bagId={queuedBag.id}
+                    bagInfo={queuedBag.info}
+                    onClaimSuccess={handleClaimSuccess}
+                  />
                 </Col>
               ))}
             </Row>
           ) : (
-            <Empty description="队列为空" />
+            <Empty description="暂无红包" />
           )}
         </div>
 
@@ -367,40 +323,44 @@ export const RedPacketQueue: React.FC = () => {
           <Col xs={12} sm={6}>
             <Card size="small" style={{ textAlign: 'center', borderRadius: '8px' }}>
               <Spin spinning={isLoadingBagId}>
-                <div style={{ fontSize: '24px', color: '#1890ff' }}>
-                  {currentBagId ? currentBagId.toString() : '0'}
-                </div>
+                <Text ellipsis style={{ fontSize: '24px', color: '#1890ff' }}>
+                  {formatBagId(currentBagId)}
+                </Text>
                 <Text type="secondary">当前红包ID</Text>
               </Spin>
             </Card>
           </Col>
           <Col xs={12} sm={6}>
             <Card size="small" style={{ textAlign: 'center', borderRadius: '8px' }}>
-              <div style={{ fontSize: '24px', color: '#52c41a' }}>
-                {bagQueue.length}
+              <div style={{ fontSize: '24px', color: safeBagInfo?.isActive ? '#52c41a' : '#999' }}>
+                {safeBagInfo?.isActive ? '活跃' : '未激活'}
               </div>
-              <Text type="secondary">队列长度</Text>
+              <Text type="secondary">红包状态</Text>
             </Card>
           </Col>
           <Col xs={12} sm={6}>
             <Card size="small" style={{ textAlign: 'center', borderRadius: '8px' }}>
               <div style={{ fontSize: '24px', color: '#fa541c' }}>
-                {bagQueue.filter(bag => bag.info.isActive).length}
+                {safeBagInfo?.remainingCount.toString() || '0'}
               </div>
-              <Text type="secondary">活跃红包</Text>
+              <Text type="secondary">剩余数量</Text>
             </Card>
           </Col>
           <Col xs={12} sm={6}>
             <Card size="small" style={{ textAlign: 'center', borderRadius: '8px' }}>
               <div style={{ fontSize: '24px', color: '#722ed1' }}>
-                {bagQueue.reduce((total, bag) => 
-                  total + Number(bag.info.remainingCount), 0
-                )}
+                {safeBagInfo ? formatAmount(safeBagInfo.remainingAmount) : '0'} ETH
               </div>
-              <Text type="secondary">剩余总数</Text>
+              <Text type="secondary">剩余金额</Text>
             </Card>
           </Col>
         </Row>
+
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+          <Text type="secondary">当前红包ID: {formatBagId(currentBagId)}</Text>
+          <Text type="secondary">红包状态: {safeBagInfo?.isActive ? '活跃' : '未激活'}</Text>
+          <Text type="secondary">合约地址: {happyBagConfig.address}</Text>
+        </Space>
       </Card>
     </div>
   )

@@ -98,21 +98,41 @@ export function useClaimBag() {
 export function useBagStatus(bagInfo: BagInfo | undefined, userAddress: string | undefined, bagId: BigNumber | undefined): BagStatus {
   const { data: userClaimedAmount } = useUserClaimedAmount(bagId, userAddress)
 
+  // 添加调试日志
+  console.log('🔍 BagStatus Debug:', {
+    bagId: bagId?.toString(),
+    userAddress,
+    bagInfo,
+    userClaimedAmount,
+    isActive: bagInfo?.isActive,
+    remainingCount: bagInfo?.remainingCount?.toString()
+  })
+
   if (!bagInfo) {
+    console.log('❌ No bagInfo, status: PENDING_DEPOSIT')
     return BagStatus.PENDING_DEPOSIT
   }
 
   // 如果用户已经领取过，显示已完成
   if (userClaimedAmount !== undefined && typeof userClaimedAmount === 'bigint' && userClaimedAmount > 0n) {
+    console.log('✅ User already claimed, status: COMPLETED')
     return BagStatus.COMPLETED
   }
 
-  // 如果红包已经不活跃或没有剩余数量，显示已完成
-  if (!bagInfo.isActive || bagInfo.remainingCount.isEqualTo(0)) {
+  // 检查剩余数量
+  if (bagInfo.remainingCount.isLessThanOrEqualTo(0)) {
+    console.log('❌ No remaining count, status: COMPLETED')
     return BagStatus.COMPLETED
+  }
+
+  // 检查红包是否活跃
+  if (!bagInfo.isActive) {
+    console.log('❌ Bag not active, status: PENDING_DEPOSIT')
+    return BagStatus.PENDING_DEPOSIT
   }
 
   // 如果有剩余数量且红包活跃，显示可领取
+  console.log('🎉 Bag available for claim, status: AVAILABLE')
   return BagStatus.AVAILABLE
 }
 
@@ -128,4 +148,44 @@ export function formatAmount(amount: BigNumber | bigint | undefined): string {
   
   // 如果是bigint类型，使用formatEther
   return formatEther(amount as bigint)
+}
+
+// 格式化红包ID显示
+export function formatBagId(bagId: BigNumber | bigint | undefined): string {
+  if (!bagId) return '0'
+  
+  let idStr: string
+  if (bagId instanceof BigNumber) {
+    idStr = bagId.toString()
+  } else {
+    idStr = bagId.toString()
+  }
+  
+  // 如果ID长度超过12位，显示前6位...后4位
+  if (idStr.length > 12) {
+    return `${idStr.slice(0, 6)}...${idStr.slice(-4)}`
+  }
+  
+  return idStr
+}
+
+// 获取红包领取记录
+export function useBagClaimRecords(bagId: BigNumber | undefined) {
+  // 注意：这里应该使用 wagmi 的 useLogs 或类似的 hook 来获取区块链事件
+  // 目前先返回空数组，因为需要配置事件监听
+  
+  // TODO: 实现真实的事件监听
+  // 例如：监听 'Claim' 事件
+  // const { data: claimEvents } = useLogs({
+  //   address: happyBagConfig.address,
+  //   event: parseAbiItem('event Claim(uint256 indexed bagId, address indexed user, uint256 amount)'),
+  //   args: { bagId: bagId ? BigInt(bagId.toFixed(0)) : undefined },
+  //   fromBlock: 'earliest'
+  // })
+  
+  return {
+    data: [], // 暂时返回空数组
+    isLoading: false,
+    error: null
+  }
 } 
