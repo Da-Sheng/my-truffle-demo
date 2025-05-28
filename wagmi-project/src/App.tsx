@@ -47,31 +47,6 @@ function App() {
   const [activeTab, setActiveTab] = useState<PageTab>(PageTab.QUEUE)
   const queryClient = useQueryClient()
 
-  // 添加CSS动画样式
-  React.useEffect(() => {
-    const style = document.createElement('style')
-    style.innerHTML = `
-      @keyframes pulse {
-        0% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.5;
-          transform: scale(1.1);
-        }
-        100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-    `
-    document.head.appendChild(style)
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
   // 监听账户变化
   useEffect(() => {
     if (account.address) {

@@ -1,8 +1,9 @@
 // HappyBag智能合约交互hooks
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { parseEther, formatEther } from 'viem'
+import { parseEther, formatEther, type Address } from 'viem'
 import BigNumber from 'bignumber.js'
 import { happyBagConfig, BagInfo, BagStatus } from '../contracts/happyBag'
+import React from 'react'
 
 // 获取当前红包ID
 export function useCurrentBagId() {
@@ -167,25 +168,4 @@ export function formatBagId(bagId: BigNumber | bigint | undefined): string {
   }
   
   return idStr
-}
-
-// 获取红包领取记录
-export function useBagClaimRecords(bagId: BigNumber | undefined) {
-  // 注意：这里应该使用 wagmi 的 useLogs 或类似的 hook 来获取区块链事件
-  // 目前先返回空数组，因为需要配置事件监听
-  
-  // TODO: 实现真实的事件监听
-  // 例如：监听 'Claim' 事件
-  // const { data: claimEvents } = useLogs({
-  //   address: happyBagConfig.address,
-  //   event: parseAbiItem('event Claim(uint256 indexed bagId, address indexed user, uint256 amount)'),
-  //   args: { bagId: bagId ? BigInt(bagId.toFixed(0)) : undefined },
-  //   fromBlock: 'earliest'
-  // })
-  
-  return {
-    data: [], // 暂时返回空数组
-    isLoading: false,
-    error: null
-  }
 } 

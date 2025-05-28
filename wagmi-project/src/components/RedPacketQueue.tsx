@@ -240,8 +240,7 @@ export const RedPacketQueue: React.FC = () => {
           )}
           
           <Empty
-            image="🧧"
-            imageStyle={{ fontSize: '64px', height: '80px' }}
+            image={<div style={{ fontSize: '64px' }}>🧧</div>}
             description={
               <Space direction="vertical" size="small">
                 <Title level={4} type="secondary">暂无红包</Title>

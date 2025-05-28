@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import BigNumber from 'bignumber.js'
 import { BagInfo, BagStatus } from '../contracts/happyBag'
-import { formatAmount, useClaimBag, useBagStatus, formatBagId } from '../hooks/useHappyBag'
+import { formatAmount, useClaimBag, useBagStatus, formatBagId, useUserClaimedAmount } from '../hooks/useHappyBag'
 import { useAccount } from 'wagmi'
 import {
   Card,
@@ -45,6 +45,9 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
   const { address } = useAccount()
   const { claimBag, isPending, isConfirming, isConfirmed } = useClaimBag()
   const status = useBagStatus(bagInfo, address, bagId)
+  
+  // 获取用户已领取金额
+  const { data: userClaimedAmount } = useUserClaimedAmount(bagId, address)
 
   // 监听领取成功
   React.useEffect(() => {
@@ -72,7 +75,7 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
         }
       case BagStatus.COMPLETED:
         return {
-          text: '已完成',
+          text: '已领取',
           color: 'green' as const,
           clickable: false,
           icon: <CheckCircleOutlined />
@@ -102,6 +105,15 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
   const claimedCount = totalCount - remainingCount
   const progressPercent = totalCount > 0 ? (claimedCount / totalCount) * 100 : 0
 
+  // 格式化用户已领金额
+  const formatUserClaimedAmount = () => {
+    if (!userClaimedAmount || typeof userClaimedAmount !== 'bigint' || userClaimedAmount === 0n) return '0'
+    return formatAmount(userClaimedAmount)
+  }
+
+  // 检查用户是否已领取
+  const hasUserClaimed = userClaimedAmount && typeof userClaimedAmount === 'bigint' && userClaimedAmount > 0n
+
   return (
     <div style={{ marginBottom: '16px' }}>
       <Badge.Ribbon 
@@ -109,6 +121,10 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
           <Space>
             {statusConfig.icon}
             {statusConfig.text}
+            {/* 在已领取状态下显示领取金额 */}
+            {status === BagStatus.COMPLETED && hasUserClaimed && (
+              <>({formatUserClaimedAmount()} ETH)</>
+            )}
           </Space>
         } 
         color={statusConfig.color}
@@ -119,8 +135,10 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
             borderRadius: '12px',
             background: status === BagStatus.AVAILABLE 
               ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)' 
+              : status === BagStatus.COMPLETED
+              ? 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)'
               : undefined,
-            color: status === BagStatus.AVAILABLE ? 'white' : undefined,
+            color: (status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) ? 'white' : undefined,
             cursor: canClick ? 'pointer' : 'default',
             opacity: isPending || isConfirming ? 0.7 : 1
           }}
@@ -136,16 +154,37 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
                     <div style={{ 
                       fontSize: '32px', 
                       marginBottom: '8px',
-                      filter: status === BagStatus.AVAILABLE ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' : undefined 
+                      filter: (status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) 
+                        ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' : undefined 
                     }}>
-                      🧧
+                      {status === BagStatus.COMPLETED ? '🎉' : '🧧'}
                     </div>
-                    <Text strong style={{ 
-                      fontSize: '18px',
-                      color: status === BagStatus.AVAILABLE ? 'white' : undefined 
-                    }}>
-                      {formatAmount(bagInfo.remainingAmount)} ETH
-                    </Text>
+                    {/* 显示不同的金额信息 */}
+                    {status === BagStatus.COMPLETED && hasUserClaimed ? (
+                      <div>
+                        <Text strong style={{ 
+                          fontSize: '18px',
+                          color: 'white'
+                        }}>
+                          我的收益: {formatUserClaimedAmount()} ETH
+                        </Text>
+                        <div style={{ marginTop: '4px' }}>
+                          <Text style={{ 
+                            fontSize: '12px',
+                            color: 'rgba(255,255,255,0.8)'
+                          }}>
+                            剩余: {formatAmount(bagInfo.remainingAmount)} ETH
+                          </Text>
+                        </div>
+                      </div>
+                    ) : (
+                      <Text strong style={{ 
+                        fontSize: '18px',
+                        color: (status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) ? 'white' : undefined 
+                      }}>
+                        {formatAmount(bagInfo.remainingAmount)} ETH
+                      </Text>
+                    )}
                   </div>
                 </Space>
               </Col>
@@ -155,7 +194,8 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
                   <Statistic
                     title={
                       <Text style={{ 
-                        color: status === BagStatus.AVAILABLE ? 'rgba(255,255,255,0.8)' : '#666',
+                        color: (status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) 
+                          ? 'rgba(255,255,255,0.8)' : '#666',
                         fontSize: '12px'
                       }}>
                         剩余数量
@@ -164,7 +204,7 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
                     value={remainingCount}
                     suffix={`/ ${totalCount}`}
                     valueStyle={{ 
-                      color: status === BagStatus.AVAILABLE ? 'white' : '#1890ff',
+                      color: (status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) ? 'white' : '#1890ff',
                       fontSize: '16px'
                     }}
                   />
@@ -172,8 +212,8 @@ export const RedPacketCard: React.FC<RedPacketCardProps> = ({
                   <Progress
                     percent={progressPercent}
                     size="small"
-                    strokeColor={status === BagStatus.AVAILABLE ? '#fff' : undefined}
-                    trailColor={status === BagStatus.AVAILABLE ? 'rgba(255,255,255,0.3)' : undefined}
+                    strokeColor={(status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) ? '#fff' : undefined}
+                    trailColor={(status === BagStatus.AVAILABLE || status === BagStatus.COMPLETED) ? 'rgba(255,255,255,0.3)' : undefined}
                     showInfo={false}
                   />
                   
