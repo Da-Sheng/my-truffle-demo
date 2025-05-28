@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOC 钱包测试界面</title>
+    <script src="./node_modules/ethers/dist/ethers.umd.min.js"></script>
+    <script src="./node_modules/jquery/dist/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .wallet-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .wallet-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .wallet-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .wallet-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+        
+        .status-indicator.connected {
+            background: #4CAF50;
+        }
+        
+        .balance-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .balance-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .balance-card h3 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+        
+        .balance-amount {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .permission-status {
+            margin: 20px 0;
+        }
+        
+        .permission-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #2196F3;
+        }
+        
+        .permission-card h4 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .permission-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .permission-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .permission-value {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .permission-value.owner {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .permission-value.not-owner {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .permission-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: #856404;
+            font-size: 0.9em;
+        }
+        
+        .actions-section {
+            padding: 30px;
+        }
+        
+        .action-group {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+        }
+        
+        .action-group h3 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+            animation: slideIn 0.3s ease-in-out;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .contract-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .contract-info strong {
+            color: #856404;
+        }
+        
+        .contract-setup {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .contract-status-indicator {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .contract-status-indicator::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+        
+        .contract-status-indicator.connected::before {
+            background: #28a745;
+        }
+        
+        .status-text {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .quick-tip {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .quick-tip small {
+            color: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .balance-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .wallet-status {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>IOC 合约测试</h1>
+            <p>基于 Ethers.js 6.0 的智能合约交互界面</p>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="wallet-section">
+            <div class="wallet-status" id="wallet-status">
+                <div class="wallet-info">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <div>
+                        <strong>钱包状态：</strong>
+                        <span id="wallet-address">未连接</span>
+                    </div>
+                </div>
+                <div class="wallet-buttons">
+                    <button id="connect-wallet" class="btn">连接钱包</button>
+                    <button id="disconnect-wallet" class="btn btn-danger" style="display: none;">断开连接</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="balance-section">
+            <div class="balance-grid">
+                <div class="balance-card">
+                    <h3>合约余额</h3>
+                    <div class="balance-amount" id="balance">0 ETH</div>
+                </div>
+                <div class="balance-card">
+                    <h3>我的余额</h3>
+                    <div class="balance-amount" id="user-balance">0 ETH</div>
+                </div>
+            </div>
+            
+            <div class="permission-status" id="permission-status" style="display: none;">
+                <div class="permission-card">
+                    <h4>账户权限</h4>
+                    <div class="permission-info">
+                        <span class="permission-label">合约所有者权限:</span>
+                        <span class="permission-value" id="owner-status">检查中...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="refresh-balance" class="btn btn-secondary">刷新余额</button>
+            <!-- <button id="check-permission" class="btn btn-secondary">检查权限</button>
+            <button id="debug-ownership" class="btn btn-secondary">🔍 调试权限</button> -->
+        </div>
+        
+        <div class="actions-section wallet-actions" style="display: none;">
+            <div class="action-group">
+                <h3>💰 充值到合约 (Collect ETH)</h3>
+                <div class="input-group">
+                    <label for="collect-amount">充值金额 (ETH):</label>
+                    <input type="number" id="collect-amount" placeholder="例如: 0.1" step="0.001" min="0">
+                </div>
+                <button id="collect" class="btn">充值到合约</button>
+            </div>
+            
+            <div class="action-group">
+                <h3>💸 从合约提取 (Withdraw ETH)</h3>
+                <div class="permission-warning">
+                    <strong>⚠️ 注意：</strong> 只有合约所有者（部署合约的账户）才能进行提取操作
+                </div>
+                <div class="input-group">
+                    <label for="withdraw-amount">提取金额 (ETH):</label>
+                    <input type="number" id="withdraw-amount" placeholder="例如: 0.05" step="0.001" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="withdraw-address">接收地址:</label>
+                    <input type="text" id="withdraw-address" placeholder="0x...">
+                </div>
+                <button id="withdraw" class="btn btn-danger">从合约提取</button>
+            </div>
+        </div>
+        
+        <div class="contract-setup">
+            <!-- <div class="input-group">
+                <label for="contract-address">IOC 合约地址:</label>
+                <input type="text" id="contract-address" placeholder="0x..." value="0x7D7DA40a5aAf4012C8157024ffbeB015AFC7177E">
+            </div>
+            <button id="set-contract" class="btn btn-secondary">设置合约</button>
+            <div id="contract-status" class="contract-status-indicator">
+                <span class="status-text">未设置合约</span>
+            </div> -->
+            <div class="quick-tip">
+                <small>💡 提示：如需重新连接不同钱包，请先点击"断开连接"</small>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
