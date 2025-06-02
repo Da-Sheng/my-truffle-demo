@@ -42,7 +42,7 @@ export function useUserClaimedAmount(bagId: BigNumber | undefined, userAddress: 
       refetchInterval: 20000, // 每20秒刷新一次
       staleTime: 15000, // 15秒内认为数据是新鲜的
     },
-  })
+  }) as { data: BigNumber }
 }
 
 // 创建红包

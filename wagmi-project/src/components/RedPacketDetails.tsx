@@ -1,7 +1,7 @@
 // 红包详情组件 - 显示领取历史和详细信息
 import React, { useState, useEffect } from 'react'
 import BigNumber from 'bignumber.js'
-import { useCurrentBagId, useBagInfo, useUserClaimedAmount, useBagClaimRecords, formatAmount, formatBagId } from '../hooks/useHappyBag'
+import { useCurrentBagId, useBagInfo, useUserClaimedAmount, formatAmount, formatBagId } from '../hooks/useHappyBag'
 import { useAccount } from 'wagmi'
 import { BagInfo } from '../contracts/happyBag'
 import {
@@ -51,7 +51,6 @@ export const RedPacketDetails: React.FC = () => {
   
   const { data: bagInfo } = useBagInfo(bagIdBN)
   const { data: userClaimedAmount } = useUserClaimedAmount(bagIdBN, address)
-  const { data: claimRecords, isLoading: isLoadingRecords } = useBagClaimRecords(bagIdBN)
 
   const [showAllRecords, setShowAllRecords] = useState(false)
 
@@ -262,63 +261,6 @@ export const RedPacketDetails: React.FC = () => {
           )}
         </Card>
       )}
-
-      {/* 领取记录 */}
-      <Card
-        title={
-          <Space>
-            <ClockCircleOutlined />
-            <span>领取记录</span>
-          </Space>
-        }
-        extra={
-          claimRecords && claimRecords.length > 3 && (
-            <Button
-              type="link"
-              icon={showAllRecords ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-              onClick={() => setShowAllRecords(!showAllRecords)}
-            >
-              {showAllRecords ? '收起' : '查看全部'}
-            </Button>
-          )
-        }
-        style={{ borderRadius: '8px' }}
-      >
-        {isLoadingRecords ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <Spin size="large" />
-            <div style={{ marginTop: '16px' }}>
-              <Text type="secondary">正在加载领取记录...</Text>
-            </div>
-          </div>
-        ) : claimRecords && claimRecords.length > 0 ? (
-          <Table
-            columns={columns}
-            dataSource={claimRecords.slice(0, showAllRecords ? undefined : 3)}
-            rowKey="key"
-            pagination={false}
-            size="middle"
-            style={{ marginTop: '16px' }}
-          />
-        ) : (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <Empty
-              description={
-                <Space direction="vertical" size="small">
-                  <Text type="secondary">暂无领取记录</Text>
-                  <Text style={{ fontSize: '12px', color: '#999' }}>
-                    当前版本暂未实现区块链事件监听
-                  </Text>
-                  <Text style={{ fontSize: '12px', color: '#999' }}>
-                    如需查看完整领取记录，请在区块链浏览器中查看合约事件
-                  </Text>
-                </Space>
-              }
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          </div>
-        )}
-      </Card>
     </Space>
   )
 } 
