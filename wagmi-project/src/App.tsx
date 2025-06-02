@@ -4,6 +4,8 @@ import { ConnectKitButton } from "connectkit"
 import { CreateRedPacket } from './components/CreateRedPacket'
 import { RedPacketQueue } from './components/RedPacketQueue'
 import { RedPacketDetails } from './components/RedPacketDetails'
+import { JJCoinManager } from './components/JJCoinManager'
+import { JJTicketSystem } from './components/JJTicketSystem'
 import { useQueryClient } from '@tanstack/react-query'
 
 // Ant Design imports
@@ -27,7 +29,9 @@ import {
   BarChartOutlined,
   WalletOutlined,
   DisconnectOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  BankOutlined,
+  CarryOutOutlined
 } from '@ant-design/icons'
 import 'antd/dist/reset.css'
 
@@ -38,7 +42,9 @@ const { Title, Paragraph, Text } = Typography
 enum PageTab {
   QUEUE = 'queue',
   CREATE = 'create', 
-  DETAILS = 'details'
+  DETAILS = 'details',
+  JJCOIN = 'jjcoin',
+  JJTICKET = 'jjticket'
 }
 
 function App() {
@@ -102,6 +108,26 @@ function App() {
         </Space>
       ),
       children: <RedPacketDetails />
+    },
+    {
+      key: PageTab.JJCOIN,
+      label: (
+        <Space>
+          <BankOutlined />
+          JJCoin
+        </Space>
+      ),
+      children: <JJCoinManager />
+    },
+    {
+      key: PageTab.JJTICKET,
+      label: (
+        <Space>
+          <CarryOutOutlined />
+          JJTicket
+        </Space>
+      ),
+      children: <JJTicketSystem />
     }
   ]
 
@@ -120,7 +146,7 @@ function App() {
         <Space size="large">
           <div style={{ fontSize: '32px' }}>🧧</div>
           <Title level={3} style={{ margin: 0, color: 'white' }}>
-            Web3红包系统
+            Web3生态系统
           </Title>
         </Space>
 
@@ -228,7 +254,7 @@ function App() {
               <div style={{ fontSize: '120px', marginBottom: '32px' }}>🧧</div>
               
               <Title level={1} style={{ marginBottom: '16px', color: '#333' }}>
-                欢迎来到Web3红包
+                欢迎来到Web3生态平台
               </Title>
               
               <Paragraph 
@@ -240,8 +266,8 @@ function App() {
                   margin: '0 auto 48px auto'
                 }}
               >
-                基于区块链技术的去中心化红包系统，体验全新的数字红包乐趣！
-                支持随机分配和平均分配两种模式，让每一次红包都充满惊喜。
+                基于区块链技术的去中心化平台，集成红包、代币兑换、票务系统等多种Web3应用！
+                体验全新的去中心化金融和数字资产管理服务。
               </Paragraph>
               
               {/* 功能特色 */}
@@ -258,10 +284,10 @@ function App() {
                       justifyContent: 'center'
                     }}
                   >
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎲</div>
-                    <Title level={4}>随机分配</Title>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🧧</div>
+                    <Title level={4}>智能红包</Title>
                     <Paragraph>
-                      随机金额分配，每个红包金额不同，增加趣味性和惊喜感
+                      随机或平均分配，区块链保障的去中心化红包系统
                     </Paragraph>
                   </Card>
                 </Col>
@@ -277,10 +303,10 @@ function App() {
                       justifyContent: 'center'
                     }}
                   >
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚖️</div>
-                    <Title level={4}>平均分配</Title>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>💰</div>
+                    <Title level={4}>代币兑换</Title>
                     <Paragraph>
-                      金额平均分配，确保每个参与者都能获得相同的收益
+                      JJC代币兑换服务，支持ETH兑换和价格管理
                     </Paragraph>
                   </Card>
                 </Col>
@@ -296,10 +322,10 @@ function App() {
                       justifyContent: 'center'
                     }}
                   >
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
-                    <Title level={4}>区块链保障</Title>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎫</div>
+                    <Title level={4}>票务系统</Title>
                     <Paragraph>
-                      去中心化智能合约保障，资金安全透明，无法篡改
+                      基于区块链的防伪票务平台，JJC代币购票
                     </Paragraph>
                   </Card>
                 </Col>
@@ -315,10 +341,10 @@ function App() {
       {account.status === 'connected' && (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 24px 24px' }}>
           <Alert
-            message="使用说明"
+            message="功能使用说明"
             description={
               <Row gutter={[24, 16]}>
-                <Col xs={24} md={8}>
+                <Col xs={24} lg={6}>
                   <Space direction="vertical" size={4}>
                     <Text strong><GiftOutlined /> 抢红包</Text>
                     <ul style={{ margin: 0, paddingLeft: '16px' }}>
@@ -329,7 +355,7 @@ function App() {
                     </ul>
                   </Space>
                 </Col>
-                <Col xs={24} md={8}>
+                <Col xs={24} lg={6}>
                   <Space direction="vertical" size={4}>
                     <Text strong><MoneyCollectOutlined /> 发红包</Text>
                     <ul style={{ margin: 0, paddingLeft: '16px' }}>
@@ -340,14 +366,36 @@ function App() {
                     </ul>
                   </Space>
                 </Col>
-                <Col xs={24} md={8}>
+                <Col xs={24} lg={6}>
                   <Space direction="vertical" size={4}>
-                    <Text strong><BarChartOutlined /> 红包详情</Text>
+                    <Text strong><BankOutlined /> JJCoin</Text>
+                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                      <li>ETH兑换JJC代币</li>
+                      <li>查看代币统计信息</li>
+                      <li>OWNER可调整价格</li>
+                      <li>OWNER可增加供应量</li>
+                    </ul>
+                  </Space>
+                </Col>
+                <Col xs={24} lg={6}>
+                  <Space direction="vertical" size={4}>
+                    <Text strong><CarryOutOutlined /> JJTicket</Text>
+                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                      <li>录入和管理票务信息</li>
+                      <li>使用JJC代币购票</li>
+                      <li>区块链防伪hash</li>
+                      <li>查看购买记录</li>
+                    </ul>
+                  </Space>
+                </Col>
+                <Col xs={24} lg={6}>
+                  <Space direction="vertical" size={4}>
+                    <Text strong><BarChartOutlined /> 数据统计</Text>
                     <ul style={{ margin: 0, paddingLeft: '16px' }}>
                       <li>查看红包领取进度</li>
-                      <li>查看个人领取状态</li>
-                      <li>查看领取历史记录</li>
-                      <li>查看红包基本信息</li>
+                      <li>查看个人资产状态</li>
+                      <li>查看交易历史记录</li>
+                      <li>查看系统运行状态</li>
                     </ul>
                   </Space>
                 </Col>
@@ -366,7 +414,7 @@ function App() {
       {/* 页脚 */}
       <Footer style={{ textAlign: 'center', background: '#fafafa' }}>
         <Text type="secondary">
-          Web3红包系统 © 2024 基于区块链技术驱动
+          Web3生态平台 © 2024 基于区块链技术构建的去中心化应用平台
         </Text>
       </Footer>
     </Layout>
