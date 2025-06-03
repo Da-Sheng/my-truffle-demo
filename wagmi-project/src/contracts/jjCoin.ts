@@ -3,7 +3,7 @@ import JJCoinABI from '../../assets/abi/JJCoin.json'
 import { parseEther, formatEther, type Address } from 'viem'
 
 // 实际部署的JJCoin合约地址
-export const JJCOIN_ADDRESS = '0xd8991b4b79661e0d0A50B345B4E3823814A21079' as const
+export const JJCOIN_ADDRESS = '0xEb1227c6220C20decFFEbd12E3f570BCDD97a1F2' as const
 
 // 导出合约ABI
 export const JJCOIN_ABI = JJCoinABI.abi

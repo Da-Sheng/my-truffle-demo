@@ -3,7 +3,7 @@ import HappyBagABI from '../../assets/abi/HappyBag.json'
 import BigNumber from 'bignumber.js'
 
 // 智能合约地址 - 请替换为实际部署的合约地址
-export const HAPPY_BAG_ADDRESS = '0xe934E635E57d7AF59319eec007cED77BCf302DAa' as const
+export const HAPPY_BAG_ADDRESS = '0x90bcED4aFC3349Ceb3E10c9D6dD075dc2f889d47' as const
 
 // 导出合约ABI
 export const HAPPY_BAG_ABI = HappyBagABI.abi
