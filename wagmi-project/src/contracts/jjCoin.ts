@@ -2,8 +2,8 @@
 import JJCoinABI from '../../assets/abi/JJCoin.json'
 import { parseEther, formatEther, type Address } from 'viem'
 
-// 实际部署的JJCoin合约地址
-export const JJCOIN_ADDRESS = '0xEb1227c6220C20decFFEbd12E3f570BCDD97a1F2' as const
+// Sepolia测试网部署的JJCoin合约地址
+export const JJCOIN_ADDRESS = '0x043BfaBE7236a3aF5EE499D1874b013f42174014' as const
 
 // 导出合约ABI
 export const JJCOIN_ABI = JJCoinABI.abi

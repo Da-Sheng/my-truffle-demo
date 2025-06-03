@@ -42,19 +42,6 @@ export const config = createConfig(
     // appIcon: "https://family.co/logo.png", // your app's icon, no bigger than 1024x1024px (max. 1MB)
   }))
 
-  // {
-  //   chains: [mainnet, sepolia],
-  //   connectors: [
-  //     injected(),
-  //     coinbaseWallet(),
-  //     walletConnect({ projectId: import.meta.env.VITE_WC_PROJECT_ID }),
-  //   ],
-  //   transports: {
-  //     [mainnet.id]: http(),
-  //     [sepolia.id]: http(),
-  //   },
-  // }
-
 declare module 'wagmi' {
   interface Register {
     config: typeof config

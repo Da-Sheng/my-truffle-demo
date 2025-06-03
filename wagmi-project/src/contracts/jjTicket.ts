@@ -1,8 +1,8 @@
 import { parseEther, formatEther, type Address } from 'viem'
 import JJTicketABI from '../../assets/abi/JJTicket.json'
 
-// JJTicket合约地址
-export const JJTICKET_ADDRESS: Address = '0x58F09a2b634baf7A97eb4f08Ca47EdEaAB8ED908'
+// Sepolia测试网部署的JJTicket合约地址
+export const JJTICKET_ADDRESS: Address = '0x04B55b50BFCFd8CC46322629DA5016fa2f9f8d0c'
 
 // JJTicket合约ABI
 export const JJTICKET_ABI = JJTicketABI.abi

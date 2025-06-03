@@ -41,10 +41,10 @@
  * https://trufflesuite.com/docs/truffle/getting-started/using-the-truffle-dashboard/
  */
 
-// require('dotenv').config();
-// const { MNEMONIC, PROJECT_ID } = process.env;
+require('dotenv').config();
+const { MNEMONIC, INFURA_PROJECT_ID, ALCHEMY_API_KEY, PRIVATE_KEY, GAS_PRICE, GAS_LIMIT } = process.env;
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 module.exports = {
   /**
@@ -69,6 +69,60 @@ module.exports = {
      port: 7545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
     },
+
+    // Sepolia 测试网络配置
+    sepolia: {
+      provider: () => {
+        // 优先使用Alchemy (更稳定)
+        if (ALCHEMY_API_KEY) {
+          const rpcUrl = `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+          if (PRIVATE_KEY) {
+            return new HDWalletProvider([PRIVATE_KEY], rpcUrl);
+          } else if (MNEMONIC) {
+            return new HDWalletProvider(MNEMONIC, rpcUrl);
+          }
+        }
+        // 备用方案：使用Infura
+        else if (INFURA_PROJECT_ID) {
+          const rpcUrl = `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`;
+          if (PRIVATE_KEY) {
+            return new HDWalletProvider([PRIVATE_KEY], rpcUrl);
+          } else if (MNEMONIC) {
+            return new HDWalletProvider(MNEMONIC, rpcUrl);
+          }
+        }
+        throw new Error('请在.env文件中配置ALCHEMY_API_KEY或INFURA_PROJECT_ID，以及PRIVATE_KEY或MNEMONIC');
+      },
+      network_id: 11155111,        // Sepolia's network id
+      confirmations: 2,            // # of confirmations to wait between deployments. (default: 0)
+      timeoutBlocks: 200,          // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true,            // Skip dry run before migrations? (default: false for public nets )
+      gas: parseInt(GAS_LIMIT) || 8000000,           // Gas limit used for deploys
+      gasPrice: parseInt(GAS_PRICE) * 1000000000 || 20000000000, // 20 gwei (in wei)
+      from: undefined,             // Account to send txs from (default: accounts[0])
+    },
+
+    // Mainnet 配置 (谨慎使用!)
+    mainnet: {
+      provider: () => {
+        if (ALCHEMY_API_KEY) {
+          const rpcUrl = `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+          if (PRIVATE_KEY) {
+            return new HDWalletProvider([PRIVATE_KEY], rpcUrl);
+          } else if (MNEMONIC) {
+            return new HDWalletProvider(MNEMONIC, rpcUrl);
+          }
+        }
+        throw new Error('主网部署需要配置ALCHEMY_API_KEY和PRIVATE_KEY或MNEMONIC');
+      },
+      network_id: 1,               // Mainnet's id
+      confirmations: 5,            // # of confirmations to wait between deployments
+      timeoutBlocks: 200,          // # of blocks before a deployment times out
+      skipDryRun: false,           // Skip dry run before migrations?
+      gas: 8000000,                // Gas limit
+      gasPrice: 30000000000,       // 30 gwei
+    },
+
     //
     // An additional network, but with some advanced options…
     // advanced: {
@@ -110,12 +164,22 @@ module.exports = {
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
       settings: {          // See the solidity docs for advice about optimization and evmVersion
        optimizer: {
-         enabled: false,
+         enabled: true,      // 启用优化器减少gas消耗
          runs: 200
        },
-       evmVersion: "byzantium"
+       evmVersion: "london"  // 使用更新的EVM版本
       }
     }
+  },
+
+  // Plugin 配置
+  plugins: [
+    'truffle-plugin-verify'  // 用于验证合约源码 (需要安装: npm install truffle-plugin-verify)
+  ],
+
+  // Etherscan API 配置 (用于合约验证)
+  api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY
   },
 
   // Truffle DB is currently disabled by default; to enable it, change enabled:

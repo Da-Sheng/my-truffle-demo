@@ -1,4 +1,4 @@
-const HappyBag = artifacts.require("HappyBag");
+// const HappyBag = artifacts.require("HappyBag");
 const JJCoin = artifacts.require("JJCoin");
 const JJTicket = artifacts.require("JJTicket");
 
@@ -8,7 +8,7 @@ module.exports = async function (deployer) {
   const jjCoinInstance = await JJCoin.deployed();
   
   // 然后部署其他合约
-  await deployer.deploy(HappyBag);
+  // await deployer.deploy(HappyBag);
   
   // 最后部署JJTicket，传入JJCoin地址和其他参数
   const ticketPrice = web3.utils.toWei("10", "ether"); // 10 JJCoin (假设18位小数)

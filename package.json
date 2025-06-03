@@ -3,13 +3,24 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-config": "node scripts/check-config.js",
+    "compile": "truffle compile",
+    "deploy:local": "truffle migrate --network development --reset",
+    "deploy:sepolia": "truffle migrate --network sepolia --reset",
+    "console:sepolia": "truffle console --network sepolia",
+    "verify:sepolia": "truffle run verify --network sepolia"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "code-inspector-plugin": "^0.20.11"
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "code-inspector-plugin": "^0.20.11",
+    "dotenv": "^16.5.0"
+  },
+  "dependencies": {
+    "web3": "^4.16.0"
   }
 }
