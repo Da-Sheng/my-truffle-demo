@@ -179,14 +179,29 @@ export const useAddTicketHashes = () => {
   })
 
   const addTicketHashes = (hashes: string[]) => {
-    // 将字符串转换为bytes32格式
+    // 🔧 修复：直接将字符串转换为bytes32格式，不进行keccak256哈希
     const bytes32Hashes = hashes.map(hashString => {
       // 如果已经是0x开头的64位hex格式，直接使用
       if (hashString.startsWith('0x') && hashString.length === 66) {
         return hashString as `0x${string}`
       }
-      // 否则对字符串进行keccak256哈希，这样总是得到32字节的结果
-      return keccak256(toBytes(hashString)) as `0x${string}`
+      
+      // 🔧 修复：直接将字符串转换为32字节的hex格式，而不是哈希
+      // 将字符串转换为UTF-8字节，然后填充到32字节
+      const bytes = toBytes(hashString)
+      const paddedBytes = new Uint8Array(32)
+      
+      // 如果字符串太长，截断；如果太短，用0填充
+      for (let i = 0; i < Math.min(bytes.length, 32); i++) {
+        paddedBytes[i] = bytes[i]
+      }
+      
+      // 转换为hex字符串
+      const hexString = '0x' + Array.from(paddedBytes)
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('')
+      
+      return hexString as `0x${string}`
     })
     
     console.log('原始字符串:', hashes)

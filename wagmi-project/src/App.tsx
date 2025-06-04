@@ -6,6 +6,7 @@ import { RedPacketQueue } from './components/RedPacketQueue'
 import { RedPacketDetails } from './components/RedPacketDetails'
 import { JJCoinManager } from './components/JJCoinManager'
 import { JJTicketSystem } from './components/JJTicketSystem'
+import { TicketSystem } from './components/TicketSystem'
 import { useQueryClient } from '@tanstack/react-query'
 
 // Ant Design imports
@@ -44,7 +45,8 @@ enum PageTab {
   CREATE = 'create', 
   DETAILS = 'details',
   JJCOIN = 'jjcoin',
-  JJTICKET = 'jjticket'
+  JJTICKET = 'jjticket',
+  TICKETS = 'tickets'
 }
 
 function App() {
@@ -128,8 +130,41 @@ function App() {
         </Space>
       ),
       children: <JJTicketSystem />
-    }
+    },
+    // {
+    //   key: PageTab.TICKETS,
+    //   label: (
+    //     <Space>
+    //       <CarryOutOutlined />
+    //       Tickets
+    //     </Space>
+    //   ),
+    //   children: <TicketSystem />
+    // }
   ]
+
+  const TabButton = ({ 
+    id, 
+    label, 
+    isActive, 
+    onClick 
+  }: { 
+    id: string
+    label: string
+    isActive: boolean
+    onClick: () => void 
+  }) => (
+    <button
+      onClick={onClick}
+      className={`px-6 py-3 rounded-lg font-medium transition-all ${
+        isActive
+          ? 'bg-blue-600 text-white shadow-md'
+          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      }`}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -146,7 +181,7 @@ function App() {
         <Space size="large">
           <div style={{ fontSize: '32px' }}>🧧</div>
           <Title level={3} style={{ margin: 0, color: 'white' }}>
-            Web3生态系统
+            Web3票务生态系统
           </Title>
         </Space>
 

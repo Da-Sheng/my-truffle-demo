@@ -97,12 +97,12 @@ export const RedPacketQueue: React.FC = () => {
 
   // 调试日志
   React.useEffect(() => {
-    console.log('🔍 Debug Info:')
-    console.log('currentBagId:', currentBagId, 'type:', typeof currentBagId)
-    console.log('bagIdLoading:', isLoadingBagId)
-    console.log('bagIdError:', bagIdError)
-    console.log('currentBagInfo:', bagInfo)
-    console.log('bagInfoError:', bagInfoError)
+    // console.log('🔍 Debug Info:')
+    // console.log('currentBagId:', currentBagId, 'type:', typeof currentBagId)
+    // console.log('bagIdLoading:', isLoadingBagId)
+    // console.log('bagIdError:', bagIdError)
+    // console.log('currentBagInfo:', bagInfo)
+    // console.log('bagInfoError:', bagInfoError)
   }, [currentBagId, isLoadingBagId, bagIdError, bagInfo, bagInfoError])
   
   // 强力刷新数据
