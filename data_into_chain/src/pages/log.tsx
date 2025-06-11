@@ -1,6 +1,7 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import type { NextPage } from 'next';
 import Head from 'next/head';
+import { useStoreData } from '../hooks/useDataToChain'
 import styles from '../styles/Home.module.css';
 import { useState, useEffect } from 'react';
 import {
@@ -58,7 +59,7 @@ interface HistoryRecord {
   output: string;
   operation: string;
   timestamp: string;
-  hash: `0x${string}`;
+  // hash: `0x${string}`;
   content?: string;
   address?: string;
   fullContent?: string;
@@ -69,54 +70,33 @@ const Home: NextPage = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
 
-  // 页面加载时同步历史记录 - 移到前面确保及时执行
   useEffect(() => {
-    const savedHistory = storage.get('convert_history') || [];
+    const savedHistory = storage.get('log_history') || [];
     setHistory(savedHistory);
   }, []);
 
-  const { data: hash, sendTransaction, isPending, error } = useSendTransaction({
-    mutation: {
-      onSuccess(data, variables, context) {
-        message.success('数据提交成功！');
-        const convertHistory = storage.get('convert_history') || [];
-        const newSubmit = {
-          id: Date.now(),
-          content: variables.data?.substring(0, 50) + '...',
-          address: address,
-          timestamp: new Date().toLocaleString(),
-          hash: data,
-          fullContent: variables.data,
-          operation: '数据上链',
-          input: variables.data || '',
-          output: data
-        };
-        convertHistory.unshift(newSubmit);
-        storage.set('convert_history', convertHistory);
-        setHistory(convertHistory);
-        form.resetFields();
-      },
-      onError(error, variables, context) {
-        message.error('提交失败，请重试');
-        console.log('onError', error, variables, context);
-      },
-    }
-  })
   const [form] = Form.useForm();
 
-  // 简化的加密状态
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
-  const transferToZero = (data: `0x${string}`) => {
-    sendTransaction({
-      data,
-      to: '0x0000000000000000000000000000000000000000',
-      value: parseEther('0'),
-      gas: BigInt(30000),
-      gasPrice: parseGwei('20'),
-    })
+  const storeData = (data: `0x${string}`) => {
+    useStoreData(data)
+
+    message.success('数据提交成功！');
+    const convertHistory = storage.get('log_history') || [];
+    const newSubmit = {
+      id: Date.now(),
+      content: data?.substring(0, 50) + '...',
+      address: address,
+      timestamp: new Date().toLocaleString(),
+      // hash: data,
+      fullContent: data,
+      operation: '数据上链',
+      input: data || '',
+      output: data
+    };
+    convertHistory.unshift(newSubmit);
+    storage.set('log_history', convertHistory);
+    setHistory(convertHistory);
+    form.resetFields();
   }
   const jumpToView = (hash: `0x${string}`) => {
     window.open(`https://sepolia.etherscan.io/tx/${hash}`);
@@ -133,7 +113,7 @@ const Home: NextPage = () => {
       console.log('提交内容:', values.content);
       message.loading('正在提交数据...', 0);
       const formatData = stringToHex(values.content);
-      transferToZero(`0x${formatData}`)
+      storeData(`0x${formatData}`)
 
     } catch (error) {
       message.destroy();
@@ -160,7 +140,7 @@ const Home: NextPage = () => {
       cancelText: '取消',
       onOk: () => {
         setHistory([]);
-        storage.remove('convert_history');
+        storage.remove('log_history');
         message.success('历史记录已清空');
         setIsHistoryModalVisible(false);
       },
@@ -171,7 +151,7 @@ const Home: NextPage = () => {
   const deleteRecord = (id: number) => {
     const updatedHistory = history.filter(item => item.id !== id);
     setHistory(updatedHistory);
-    storage.set('convert_history', updatedHistory);
+    storage.set('log_history', updatedHistory);
     message.success('记录已删除');
   };
 
@@ -277,13 +257,12 @@ const Home: NextPage = () => {
                   <Button
                     type="primary"
                     htmlType="submit"
-                    loading={isPending}
                     disabled={!isConnected}
                     block
                     size="large"
                     icon={<SendOutlined />}
                   >
-                    {isPending ? '提交中...' : '提交上链'}
+                    {'提交上链'}
                   </Button>
                 </Form.Item>
               </Form>
@@ -370,26 +349,6 @@ const Home: NextPage = () => {
                   }}
                   actions={[
                     <Button
-                      key="copy-hash"
-                      type="text"
-                      size="small"
-                      icon={<CopyOutlined />}
-                      onClick={() => copyToClipboard(item.hash || item.output, '交易哈希')}
-                    >
-                      复制哈希
-                    </Button>,
-                    item.hash && (
-                      <Button
-                        key="view-tx"
-                        type="text"
-                        size="small"
-                        icon={<LinkOutlined />}
-                        onClick={() => jumpToView(item.hash)}
-                      >
-                        查看交易
-                      </Button>
-                    ),
-                    <Button
                       key="delete"
                       type="text"
                       size="small"
@@ -440,11 +399,6 @@ const Home: NextPage = () => {
                             </Text>
                           </Descriptions.Item>
                         )}
-                        <Descriptions.Item label="交易哈希">
-                          <Text code style={{ fontSize: '12px' }}>
-                            {item.hash || item.output}
-                          </Text>
-                        </Descriptions.Item>
                         {item.address && (
                           <Descriptions.Item label="钱包地址">
                             <Text code style={{ fontSize: '12px' }}>

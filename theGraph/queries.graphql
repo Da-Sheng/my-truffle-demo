@@ -1,0 +1,234 @@
+# ============================================================================
+# DataToChain 子图查询示例
+# ============================================================================
+
+# 查询最新的消息记录
+query GetLatestMessages {
+  remarkMessages(
+    first: 10, 
+    orderBy: timestamp, 
+    orderDirection: desc
+  ) {
+    id
+    sender
+    timestamp
+    decodedData
+    blockNumber
+    transactionHash
+    user {
+      id
+      totalMessages
+    }
+  }
+}
+
+# 查询特定用户的所有消息
+query GetUserMessages($userAddress: Bytes!) {
+  user(id: $userAddress) {
+    id
+    totalMessages
+    firstMessageAt
+    lastMessageAt
+    totalDataSize
+    messages(orderBy: timestamp, orderDirection: desc) {
+      id
+      timestamp
+      decodedData
+      blockNumber
+      transactionHash
+    }
+  }
+}
+
+# 查询活跃用户排行榜
+query GetTopUsers {
+  users(
+    first: 10, 
+    orderBy: totalMessages, 
+    orderDirection: desc
+  ) {
+    id
+    totalMessages
+    totalDataSize
+    firstMessageAt
+    lastMessageAt
+  }
+}
+
+# 查询全局统计数据
+query GetGlobalStats {
+  globalStats(first: 1) {
+    id
+    totalMessages
+    totalUsers
+    totalDataSize
+    averageMessageSize
+    lastUpdated
+    lastBlockNumber
+  }
+}
+
+# 查询每日统计数据
+query GetDailyStats($days: Int = 7) {
+  dailyStats(
+    first: $days, 
+    orderBy: date, 
+    orderDirection: desc
+  ) {
+    id
+    date
+    messageCount
+    activeUsers
+    newUsers
+    totalDataSize
+    averageMessageSize
+  }
+}
+
+# 查询小时级统计数据
+query GetHourlyStats($hours: Int = 24) {
+  messageByHours(
+    first: $hours, 
+    orderBy: hour, 
+    orderDirection: desc
+  ) {
+    id
+    hour
+    messageCount
+    activeUsers
+    totalDataSize
+  }
+}
+
+# 搜索包含特定内容的消息
+query SearchMessages($searchText: String!) {
+  remarkMessages(
+    where: { 
+      decodedData_contains: $searchText 
+    }
+    orderBy: timestamp, 
+    orderDirection: desc
+  ) {
+    id
+    sender
+    timestamp
+    decodedData
+    blockNumber
+    transactionHash
+  }
+}
+
+# 查询特定时间范围内的消息
+query GetMessagesInTimeRange(
+  $startTime: BigInt!, 
+  $endTime: BigInt!
+) {
+  remarkMessages(
+    where: {
+      timestamp_gte: $startTime,
+      timestamp_lte: $endTime
+    }
+    orderBy: timestamp, 
+    orderDirection: desc
+  ) {
+    id
+    sender
+    timestamp
+    decodedData
+    blockNumber
+    user {
+      id
+      totalMessages
+    }
+  }
+}
+
+# 查询特定区块范围内的消息
+query GetMessagesInBlockRange(
+  $startBlock: BigInt!, 
+  $endBlock: BigInt!
+) {
+  remarkMessages(
+    where: {
+      blockNumber_gte: $startBlock,
+      blockNumber_lte: $endBlock
+    }
+    orderBy: blockNumber, 
+    orderDirection: desc
+  ) {
+    id
+    sender
+    timestamp
+    decodedData
+    blockNumber
+    transactionHash
+  }
+}
+
+# 分页查询所有消息
+query GetMessagesPaginated(
+  $first: Int = 10, 
+  $skip: Int = 0
+) {
+  remarkMessages(
+    first: $first,
+    skip: $skip,
+    orderBy: timestamp, 
+    orderDirection: desc
+  ) {
+    id
+    sender
+    timestamp
+    decodedData
+    blockNumber
+    transactionHash
+  }
+}
+
+# 组合查询：获取概览数据
+query GetDashboardData {
+  # 全局统计
+  globalStats(first: 1) {
+    totalMessages
+    totalUsers
+    totalDataSize
+    averageMessageSize
+    lastUpdated
+  }
+  
+  # 最新消息
+  recentMessages: remarkMessages(
+    first: 5, 
+    orderBy: timestamp, 
+    orderDirection: desc
+  ) {
+    id
+    sender
+    decodedData
+    timestamp
+    blockNumber
+  }
+  
+  # 活跃用户
+  topUsers: users(
+    first: 5, 
+    orderBy: totalMessages, 
+    orderDirection: desc
+  ) {
+    id
+    totalMessages
+    totalDataSize
+  }
+  
+  # 最近7天统计
+  recentStats: dailyStats(
+    first: 7, 
+    orderBy: date, 
+    orderDirection: desc
+  ) {
+    date
+    messageCount
+    activeUsers
+    newUsers
+  }
+} 
