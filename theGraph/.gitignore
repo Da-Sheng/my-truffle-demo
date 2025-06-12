@@ -1,7 +1,0 @@
-node_modules/
-generated/
-build/
-.DS_Store
-*.log
-yarn-error.log
-npm-debug.log* 
